@@ -16,7 +16,7 @@ var (
 	menuItems         = make(map[uint32]*MenuItem)
 	menuItemsLock     sync.RWMutex
 
-	currentID atomic.Uint32
+	currentID = uint32(0)
 	quitOnce  sync.Once
 )
 
@@ -53,6 +53,12 @@ type MenuItem struct {
 	isCheckable bool
 	// parent item, for sub menus
 	parent *MenuItem
+
+	// isSeparator is a flag to indicate if the menu item is a seperator
+	isSeparator bool
+
+	// isVisible is a flag to indicate if the menu item is visible
+	isVisible bool
 }
 
 func (item *MenuItem) String() string {
@@ -66,13 +72,15 @@ func (item *MenuItem) String() string {
 func newMenuItem(title string, tooltip string, parent *MenuItem) *MenuItem {
 	return &MenuItem{
 		ClickedCh:   make(chan struct{}),
-		id:          currentID.Add(1),
+		id:          atomic.AddUint32(&currentID, 1),
 		title:       title,
 		tooltip:     tooltip,
 		disabled:    false,
 		checked:     false,
 		isCheckable: false,
 		parent:      parent,
+		isVisible:   true,
+		isSeparator: false,
 	}
 }
 
@@ -145,8 +153,8 @@ func AddMenuItem(title string, tooltip string) *MenuItem {
 }
 
 // AddMenuItemCheckbox adds a menu item with the designated title and tooltip and a checkbox for Linux.
-// On other platforms there will be a check indicated next to the item if `checked` is true.
 // It can be safely invoked from different goroutines.
+// On Windows and OSX this is the same as calling AddMenuItem
 func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 	item := newMenuItem(title, tooltip, nil)
 	item.isCheckable = true
@@ -155,14 +163,17 @@ func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 	return item
 }
 
-// AddSeparator adds a separator bar to the menu
-func AddSeparator() {
-	addSeparator(currentID.Add(1), 0)
+func AddSeparator() *MenuItem {
+	item := newMenuItem("--------", "", nil)
+	item.isSeparator = true
+	item.update()
+	return item
 }
 
 // AddSeparator adds a separator bar to the submenu
 func (item *MenuItem) AddSeparator() {
-	addSeparator(currentID.Add(1), item.id)
+	// TODO: Handle consecutive separators
+	addSeparator(atomic.AddUint32(&currentID, 1), item.id)
 }
 
 // AddSubMenuItem adds a nested sub-menu item with the designated title and tooltip.
@@ -217,6 +228,7 @@ func (item *MenuItem) Disable() {
 // Hide hides a menu item
 func (item *MenuItem) Hide() {
 	hideMenuItem(item)
+	preventTwoConsecutiveSeparators()
 }
 
 // Remove removes a menu item
@@ -225,11 +237,13 @@ func (item *MenuItem) Remove() {
 	menuItemsLock.Lock()
 	delete(menuItems, item.id)
 	menuItemsLock.Unlock()
+	preventTwoConsecutiveSeparators()
 }
 
 // Show shows a previously hidden menu item
 func (item *MenuItem) Show() {
 	showMenuItem(item)
+	preventTwoConsecutiveSeparators()
 }
 
 // Checked returns if the menu item has a check mark
