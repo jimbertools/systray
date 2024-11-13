@@ -1,4 +1,5 @@
-//go:build !ios
+//go:build darwin
+// +build darwin
 
 package systray
 
@@ -92,6 +93,11 @@ func SetTooltip(tooltip string) {
 }
 
 func addOrUpdateMenuItem(item *MenuItem) {
+	if item.isSeparator {
+		addSeparator(item.id, 0)
+		return
+	}
+
 	var disabled C.short
 	if item.disabled {
 		disabled = 1
@@ -166,4 +172,7 @@ func systray_menu_will_open() {
 	case TrayOpenedCh <- struct{}{}:
 	default:
 	}
+}
+
+func preventTwoConsecutiveSeparators() {
 }

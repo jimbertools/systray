@@ -1,4 +1,5 @@
 //go:build windows
+// +build windows
 
 package systray
 
@@ -43,24 +44,24 @@ func TestBaseWindowsTray(t *testing.T) {
 		t.Errorf("SetIcon failed: %s", err)
 	}
 
-	var id atomic.Int32
-	err := wt.addOrUpdateMenuItem(id.Add(1), "Simple enabled", false, false)
+	var id int32 = 0
+	err := wt.addOrUpdateMenuItem(atomic.AddInt32(&id, 1), "Simple enabled", false, false)
 	if err != nil {
 		t.Errorf("mergeMenuItem failed: %s", err)
 	}
-	err = wt.addOrUpdateMenuItem(id.Add(1), "Simple disabled", true, false)
+	err = wt.addOrUpdateMenuItem(atomic.AddInt32(&id, 1), "Simple disabled", true, false)
 	if err != nil {
 		t.Errorf("mergeMenuItem failed: %s", err)
 	}
-	err = wt.addSeparatorMenuItem(id.Add(1))
+	err = wt.addSeparatorMenuItem(atomic.AddInt32(&id, 1))
 	if err != nil {
 		t.Errorf("addSeparatorMenuItem failed: %s", err)
 	}
-	err = wt.addOrUpdateMenuItem(id.Add(1), "Simple checked enabled", false, true)
+	err = wt.addOrUpdateMenuItem(atomic.AddInt32(&id, 1), "Simple checked enabled", false, true)
 	if err != nil {
 		t.Errorf("mergeMenuItem failed: %s", err)
 	}
-	err = wt.addOrUpdateMenuItem(id.Add(1), "Simple checked disabled", true, true)
+	err = wt.addOrUpdateMenuItem(atomic.AddInt32(&id, 1), "Simple checked disabled", true, true)
 	if err != nil {
 		t.Errorf("mergeMenuItem failed: %s", err)
 	}

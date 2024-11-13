@@ -1,4 +1,5 @@
 //go:build windows
+// +build windows
 
 package systray
 
@@ -12,10 +13,10 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"unsafe"
 
+	"github.com/tevino/abool"
 	"golang.org/x/sys/windows"
 )
 
@@ -236,12 +237,12 @@ type winTray struct {
 	wmSystrayMessage,
 	wmTaskbarCreated uint32
 
-	initialized atomic.Bool
+	initialized *abool.AtomicBool
 }
 
 // isReady checks if the tray as already been initialized. It is not goroutine safe with in regard to the initialization function, but prevents a panic when functions are called too early.
 func (t *winTray) isReady() bool {
-	return t.initialized.Load()
+	return t.initialized.IsSet()
 }
 
 // Loads an image from file and shows it in tray.
@@ -289,7 +290,9 @@ func (t *winTray) setTooltip(src string) error {
 	return t.nid.modify()
 }
 
-var wt = winTray{}
+var wt = winTray{
+	initialized: abool.New(),
+}
 
 // WindowProc callback function that processes messages sent to a window.
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms633573(v=vs.85).aspx
@@ -902,7 +905,7 @@ func registerSystray() {
 		return
 	}
 
-	wt.initialized.Store(true)
+	wt.initialized.Set()
 	systrayReady()
 }
 
@@ -1060,6 +1063,11 @@ func SetTooltip(tooltip string) {
 }
 
 func addOrUpdateMenuItem(item *MenuItem) {
+	if item.isSeparator {
+		addSeparator(item.id, 0)
+		return
+	}
+
 	err := wt.addOrUpdateMenuItem(uint32(item.id), item.parentId(), item.title, item.disabled, item.checked)
 	if err != nil {
 		log.Printf("systray error: unable to addOrUpdateMenuItem: %s\n", err)
@@ -1084,6 +1092,7 @@ func addSeparator(id uint32, parent uint32) {
 }
 
 func hideMenuItem(item *MenuItem) {
+	item.isVisible = false
 	err := wt.hideMenuItem(uint32(item.id), item.parentId())
 	if err != nil {
 		log.Printf("systray error: unable to hideMenuItem: %s\n", err)
@@ -1100,6 +1109,7 @@ func removeMenuItem(item *MenuItem) {
 }
 
 func showMenuItem(item *MenuItem) {
+	item.isVisible = true
 	addOrUpdateMenuItem(item)
 }
 
@@ -1110,4 +1120,30 @@ func resetMenu() {
 	wt.menuOf = make(map[uint32]windows.Handle)
 	wt.menuItemIcons = make(map[uint32]windows.Handle)
 	wt.createMenu()
+}
+
+// preventTwoConsecutiveSeparators prevents consecutive separators from being shown in the menu.
+func preventTwoConsecutiveSeparators() {
+	// Show all separators
+	for _, mi := range menuItems {
+		if mi.isSeparator && !mi.isVisible {
+			showMenuItem(mi)
+		}
+	}
+
+	// Retrieve the list of all menu items in order for processing.
+	var keys []int
+	for _, key := range wt.visibleItems[0] {
+		keys = append(keys, int(key))
+	}
+
+	// Sort the keys, so we can iterate through the menu items in order.
+	sort.Ints(keys)
+
+	// Hide one of the separators if there are two consecutive separators.
+	for i := 0; i < len(keys)-1; i++ {
+		if menuItems[uint32(keys[i])].isSeparator && menuItems[uint32(keys[i+1])].isSeparator {
+			hideMenuItem(menuItems[uint32(keys[i])])
+		}
+	}
 }

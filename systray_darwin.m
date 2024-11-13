@@ -1,4 +1,4 @@
-//go:build !ios
+//go:build darwin
 
 #import <Cocoa/Cocoa.h>
 #include "systray.h"

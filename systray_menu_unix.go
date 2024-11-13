@@ -1,4 +1,5 @@
-//go:build (linux || freebsd || openbsd || netbsd) && !android
+//go:build linux
+// +build linux
 
 package systray
 
@@ -7,8 +8,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/prop"
-
-	"fyne.io/systray/internal/generated/menu"
+	"github.com/jimbertools/systray/menu"
 )
 
 // SetIcon sets the icon of a menu item.
@@ -178,6 +178,11 @@ type menuLayout = struct {
 }
 
 func addOrUpdateMenuItem(item *MenuItem) {
+	if item.isSeparator {
+		addSeparator(item.id, 0)
+		return
+	}
+
 	var layout *menuLayout
 	instance.menuLock.Lock()
 	defer instance.menuLock.Unlock()
@@ -351,4 +356,7 @@ func resetMenu() {
 	instance.menu = &menuLayout{}
 	instance.menuVersion++
 	refresh()
+}
+
+func preventTwoConsecutiveSeparators() {
 }
