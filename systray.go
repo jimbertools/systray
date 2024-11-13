@@ -16,7 +16,7 @@ var (
 	menuItems         = make(map[uint32]*MenuItem)
 	menuItemsLock     sync.RWMutex
 
-	currentID = uint32(0)
+	currentID atomic.Uint32
 	quitOnce  sync.Once
 
 	// TrayOpenedCh receives an entry each time the system tray menu is opened.
@@ -75,7 +75,7 @@ func (item *MenuItem) String() string {
 func newMenuItem(title string, tooltip string, parent *MenuItem) *MenuItem {
 	return &MenuItem{
 		ClickedCh:   make(chan struct{}),
-		id:          atomic.AddUint32(&currentID, 1),
+		id:          currentID.Add(1),
 		title:       title,
 		tooltip:     tooltip,
 		disabled:    false,
@@ -175,16 +175,48 @@ func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 }
 
 func AddSeparator() *MenuItem {
-	item := newMenuItem("--------", "", nil)
-	item.isSeparator = true
-	item.update()
+	id := currentID.Add(1)
+	item := &MenuItem{
+		ClickedCh:   make(chan struct{}),
+		id:          id,
+		title:       "",
+		tooltip:     "",
+		disabled:    false,
+		checked:     false,
+		isCheckable: false,
+		parent:      nil,
+		isSeparator: true,
+	}
+
+	menuItemsLock.Lock()
+	menuItems[item.id] = item
+	menuItemsLock.Unlock()
+
+	addSeparator(id, 0)
 	return item
 }
 
 // AddSeparator adds a separator bar to the submenu
-func (item *MenuItem) AddSeparator() {
-	// TODO: Handle consecutive separators
-	addSeparator(atomic.AddUint32(&currentID, 1), item.id)
+func (item *MenuItem) AddSeparator() *MenuItem {
+	id := currentID.Add(1)
+	separator := &MenuItem{
+		ClickedCh:   make(chan struct{}),
+		id:          id,
+		title:       "",
+		tooltip:     "",
+		disabled:    false,
+		checked:     false,
+		isCheckable: false,
+		parent:      item,
+		isSeparator: true,
+	}
+
+	menuItemsLock.Lock()
+	menuItems[separator.id] = separator
+	menuItemsLock.Unlock()
+
+	addSeparator(id, item.id)
+	return separator
 }
 
 // AddSubMenuItem adds a nested sub-menu item with the designated title and tooltip.

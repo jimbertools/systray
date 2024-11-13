@@ -51,6 +51,11 @@ func onReady() {
 
 		systray.AddMenuItem("Ignored", "Ignored")
 
+		// Testing
+		systray.AddSeparator()
+		mTest := systray.AddMenuItem("Test", "For testing")
+		testSeparator := systray.AddSeparator()
+
 		subMenuTop := systray.AddMenuItem("SubMenuTop", "SubMenu Test (top)")
 		subMenuMiddle := subMenuTop.AddSubMenuItem("SubMenuMiddle", "SubMenu Test (middle)")
 		subMenuBottom := subMenuMiddle.AddSubMenuItemCheckbox("SubMenuBottom - Toggle Panic!", "SubMenu Test (bottom) - Hide/Show Panic!", false)
@@ -106,10 +111,26 @@ func onReady() {
 				addQuitItem()
 			case <-mToggle.ClickedCh:
 				toggle()
+			case <-mTest.ClickedCh:
+				testingSeparator(mTest, testSeparator)
 			case <-systray.TrayOpenedCh:
 				trayOpenedCount++
 				mOpenedCount.SetTitle(fmt.Sprintf("Tray opened count: %d", trayOpenedCount))
 			}
 		}
 	}()
+}
+
+// testingSeparator will hide and show the test menu item and separator in an infinite loop you have to click the test menu item to start
+func testingSeparator(mTest *systray.MenuItem, testSeparator *systray.MenuItem) {
+	for {
+		mTest.Hide()
+		testSeparator.Hide()
+		println("Hiding test menu item and separator")
+		time.Sleep(5 * time.Second)
+		mTest.Show()
+		testSeparator.Show()
+		println(":) Showing test menu item and separator")
+		time.Sleep(5 * time.Second)
+	}
 }

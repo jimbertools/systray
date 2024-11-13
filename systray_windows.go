@@ -1063,11 +1063,6 @@ func SetTooltip(tooltip string) {
 }
 
 func addOrUpdateMenuItem(item *MenuItem) {
-	if item.isSeparator {
-		addSeparator(item.id, 0)
-		return
-	}
-
 	err := wt.addOrUpdateMenuItem(uint32(item.id), item.parentId(), item.title, item.disabled, item.checked)
 	if err != nil {
 		log.Printf("systray error: unable to addOrUpdateMenuItem: %s\n", err)

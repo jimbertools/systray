@@ -93,11 +93,6 @@ func SetTooltip(tooltip string) {
 }
 
 func addOrUpdateMenuItem(item *MenuItem) {
-	if item.isSeparator {
-		addSeparator(item.id, 0)
-		return
-	}
-
 	var disabled C.short
 	if item.disabled {
 		disabled = 1

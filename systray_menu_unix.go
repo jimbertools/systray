@@ -178,11 +178,6 @@ type menuLayout = struct {
 }
 
 func addOrUpdateMenuItem(item *MenuItem) {
-	if item.isSeparator {
-		addSeparator(item.id, 0)
-		return
-	}
-
 	var layout *menuLayout
 	instance.menuLock.Lock()
 	defer instance.menuLock.Unlock()
