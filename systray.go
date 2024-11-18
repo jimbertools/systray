@@ -186,6 +186,7 @@ func AddSeparator() *MenuItem {
 		isCheckable: false,
 		parent:      nil,
 		isSeparator: true,
+		isVisible:   true,
 	}
 
 	menuItemsLock.Lock()
@@ -197,26 +198,8 @@ func AddSeparator() *MenuItem {
 }
 
 // AddSeparator adds a separator bar to the submenu
-func (item *MenuItem) AddSeparator() *MenuItem {
-	id := currentID.Add(1)
-	separator := &MenuItem{
-		ClickedCh:   make(chan struct{}),
-		id:          id,
-		title:       "",
-		tooltip:     "",
-		disabled:    false,
-		checked:     false,
-		isCheckable: false,
-		parent:      item,
-		isSeparator: true,
-	}
-
-	menuItemsLock.Lock()
-	menuItems[separator.id] = separator
-	menuItemsLock.Unlock()
-
-	addSeparator(id, item.id)
-	return separator
+func (item *MenuItem) AddSeparator() {
+	addSeparator(currentID.Add(1), item.id)
 }
 
 // AddSubMenuItem adds a nested sub-menu item with the designated title and tooltip.
