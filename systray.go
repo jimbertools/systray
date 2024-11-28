@@ -64,6 +64,10 @@ type MenuItem struct {
 	isVisible bool
 }
 
+func (item *MenuItem) Title() string {
+	return item.title
+}
+
 func (item *MenuItem) String() string {
 	if item.parent == nil {
 		return fmt.Sprintf("MenuItem[%d, %q]", item.id, item.title)
