@@ -175,8 +175,10 @@ func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 }
 
 // AddSeparator adds a separator bar to the menu
-func AddSeparator() {
-	addSeparator(currentID.Add(1), 0)
+func AddSeparator() *MenuItem {
+	item := newMenuItem("--------", "", nil)
+	item.update()
+	return item
 }
 
 // AddSeparator adds a separator bar to the submenu
