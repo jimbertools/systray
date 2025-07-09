@@ -212,6 +212,10 @@ func (item *MenuItem) SetTitle(title string) {
 	item.update()
 }
 
+func (item *MenuItem) Title() string {
+	return item.title
+}
+
 // SetTooltip set the tooltip to show when mouse hover
 func (item *MenuItem) SetTooltip(tooltip string) {
 	item.tooltip = tooltip
