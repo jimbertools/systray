@@ -176,9 +176,19 @@ func AddMenuItemCheckbox(title string, tooltip string, checked bool) *MenuItem {
 
 // AddSeparator adds a separator bar to the menu
 func AddSeparator() *MenuItem {
-	item := newMenuItem("--------", "", nil)
-	item.update()
-	return item
+	id := currentID.Add(1)
+	addSeparator(id, 0)
+
+	return &MenuItem{
+		ClickedCh:   make(chan struct{}),
+		id:          id,
+		title:       "---",
+		tooltip:     "",
+		disabled:    false,
+		checked:     false,
+		isCheckable: false,
+		parent:      nil,
+	}
 }
 
 // AddSeparator adds a separator bar to the submenu
